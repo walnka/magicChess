@@ -28,16 +28,6 @@ class Team(Enum):
     B = 0
     NULL = -1
 
-def setupCamera():
-    cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1024)
-    time.sleep(1.000)
-    return cap
-
-def takeRawImage(cap):
-    return (cap.read()[1])
-
 class Board():
     def __init__(self):
         self.origin = [320,80]
@@ -63,6 +53,12 @@ class Board():
         #     [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]],
         #     [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]]
         # ]
+    def takeRawImage(self):
+        cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1024)
+        time.sleep(0.500)
+        return (cap.read()[1])
 
     def findPiecesLoc(self, image):
         # Convert image to grayscale
@@ -162,7 +158,7 @@ class Game():
 
     def captureBoard(self):
         board = Board()
-        rawImage = takeRawImage(camera)
+        rawImage = board.takeRawImage()
         processedImage = board.generateBoard(rawImage)
         return board, processedImage
 
@@ -184,15 +180,14 @@ class Game():
             # Property Change:: prePos = 2: White - Null, postPos = -1: Black - White or -2: Null - White
             for location in changedLocations:
                 if changeBoard[location[0]][location[1]][0] == 2:
-                    prePos = BoardCols(location[0]).name + location[1]
+                    prePos = BoardCols(location[1]+1).name + (location[0] + 1)
                 if changeBoard[location[0]][location[1]][0] == -1 or changeBoard[location[0]][location[1]][0] == -2:
-                    postPos = BoardCols(location[0]).name + location[1]
+                    postPos = BoardCols(location[1]+1).name + (location[0] + 1)
             move_str = prePos + postPos
         return move_str #, team, piece
 
 
 if __name__ == "__main__":
-    camera = setupCamera()
     chessGame = Game()
     preBoard, preProcessedImage = chessGame.captureBoard()
     cv2.imshow('PreBoard',preProcessedImage)
@@ -200,7 +195,7 @@ if __name__ == "__main__":
     postBoard, postProcessedImage = chessGame.captureBoard()
     cv2.imshow('PostBoard', postProcessedImage)
     cv2.waitKey(0)
-    chessGame.detectMove(preBoard, postBoard)
+    move_str = chessGame.detectMove(preBoard, postBoard)
     # prePosition, postPosition, team, piece = chessGame.detectMove(preBoard, postBoard)
     pass
     
