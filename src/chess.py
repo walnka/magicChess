@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import time
 from enum import Enum
+from collections import Counter
 
 class Piece(Enum):
     K = 1
@@ -23,8 +24,8 @@ class BoardCols(Enum):
     H = 8
 
 class Team(Enum):
-    W = 0
-    B = 1
+    W = 1
+    B = 0
     NULL = -1
 
 def setupCamera():
@@ -49,18 +50,19 @@ class Board():
             Piece.B: ([100,127,127], [200,255,255]),
             Piece.N: ([0,127,0], [160,225,127]),
             Piece.R: ([120,0,127], [255,127,255]),
-            Piece.P: ([155,150,0], [255,255,127])
+            Piece.P: ([160,150,0], [255,255,127])
         }
-        self.boardArray = [
-            [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]],
-            [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]],
-            [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]],
-            [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]],
-            [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]],
-            [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]],
-            [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]],
-            [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]]
-        ]
+        self.boardArray = np.zeros((8,8,2))
+        # self.boardArray = [
+        #     [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]],
+        #     [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]],
+        #     [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]],
+        #     [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]],
+        #     [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]],
+        #     [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]],
+        #     [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]],
+        #     [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]]
+        # ]
 
     def findPiecesLoc(self, image):
         # Convert image to grayscale
@@ -106,14 +108,14 @@ class Board():
         # Find Type of Piece
         # cv2.imshow('AnalyseSpot',contrastImage)
         # cv2.waitKey(0)
-        pieceType = Piece.NULL
+        pieceType = Piece.NULL.value
         typeColor = image[location[1], location[0]]
         # cv2.imshow('AnalyseSpot',image[location[1]-self.teamColorOffset:location[1]+self.teamColorOffset, location[0]-self.teamColorOffset:location[0]+self.teamColorOffset])
         # cv2.waitKey(0)
         pass
         for piece, pieceColor in self.pieceColorDict.items():
             if pieceColor[0][0] < typeColor[0] < pieceColor[1][0] and pieceColor[0][1] < typeColor[1] < pieceColor[1][1] and pieceColor[0][2] < typeColor[2] < pieceColor[1][2]:
-                pieceType = piece
+                pieceType = piece.value
                 break
         
         # Identify Team of piece
@@ -124,11 +126,11 @@ class Board():
         whiteRange = [127, 255]
         blackRange = [0, 127]
         if (whiteRange[0] <= teamColor <= whiteRange[1]):
-            team=Team.W
+            team=Team.W.value
         elif (blackRange[0] <= teamColor < blackRange[1]):
-            team=Team.B
+            team=Team.B.value
         else:
-            team = Team.NULL
+            team = Team.NULL.value
             print("Team not Recognized")
         return row,col,pieceType,team
 
@@ -141,7 +143,7 @@ class Board():
         pieceType = self.boardArray[row-1][BoardCols(col).value-1][1]
         orgX = round((self.origin[0] + (BoardCols(col).value-1)*self.width/8 + 5)) #  + self.width/16
         orgY = round((self.origin[1] + (row-1)*self.height/8+self.height/8-5)) # + self.height/16
-        cv2.putText(image, teamValue.name + pieceType.name, (orgX, orgY), font, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
+        cv2.putText(image, Team(teamValue).name + Piece(pieceType).name, (orgX, orgY), font, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
         return image
 
     def generateBoard(self,rawImage):
@@ -154,22 +156,51 @@ class Board():
             processedImage = self.addPiecesToImage(processedImage, row, col)
         return processedImage
 
+class Game():
+    def __init__(self):
+        self.a = 1
+
+    def captureBoard(self):
+        board = Board()
+        rawImage = takeRawImage(camera)
+        processedImage = board.generateBoard(rawImage)
+        return board, processedImage
+
+    def detectMove(self, preBoard, postBoard):
+        changeBoard = preBoard.boardArray - postBoard.boardArray
+        changedIndices = changeBoard.nonzero()
+        # changedIndices = [[1,2,1],[4,5,4],[1,1,1]]
+        changedLocations = []
+        for indic in range(len(changedIndices[0])):
+            changedLocations.append([changedIndices[0][indic], changedIndices[1][indic]])
+        dictChangedLocations = Counter(tuple(item) for item in changedLocations)
+        changedProperties = set(tuple(changedIndices[2]))
+        # Check if anything other than 2 locations changed or if team didn't change (both considered errors)
+        if ((len(dictChangedLocations) != 2) or (0 not in changedProperties)):
+            moveInput = input("Input your move in position moved from -> position moved to notation (ex. A2 A4): ")
+            move_str = moveInput.replace(" ","")
+            pass
+        else:
+            # Property Change:: prePos = 2: White - Null, postPos = -1: Black - White or -2: Null - White
+            for location in changedLocations:
+                if changeBoard[location[0]][location[1]][0] == 2:
+                    prePos = BoardCols(location[0]).name + location[1]
+                if changeBoard[location[0]][location[1]][0] == -1 or changeBoard[location[0]][location[1]][0] == -2:
+                    postPos = BoardCols(location[0]).name + location[1]
+            move_str = prePos + postPos
+        return move_str #, team, piece
 
 
 if __name__ == "__main__":
     camera = setupCamera()
-    board = Board()
-    rawImage = takeRawImage(camera)
-    # locations, image, grayImage = board.findPiecesLoc(rawImage)
-    # print(locations)
-    # for location in locations:
-    #     board.identifyPiece(location, rawImage)
-    # # board.identifyPiece(locations[0], rawImage)
-    # image = board.drawGrid(image)
-    # board, image = mapBoard(locations, image)
-    processedImage = board.generateBoard(rawImage)
-    cv2.imshow('ProcessedBoard',processedImage)
-    pass
+    chessGame = Game()
+    preBoard, preProcessedImage = chessGame.captureBoard()
+    cv2.imshow('PreBoard',preProcessedImage)
     cv2.waitKey(0)
+    postBoard, postProcessedImage = chessGame.captureBoard()
+    cv2.imshow('PostBoard', postProcessedImage)
+    cv2.waitKey(0)
+    chessGame.detectMove(preBoard, postBoard)
+    # prePosition, postPosition, team, piece = chessGame.detectMove(preBoard, postBoard)
     pass
     
