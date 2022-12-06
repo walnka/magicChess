@@ -3,6 +3,7 @@ import numpy as np
 import time
 from enum import Enum
 from collections import Counter
+from chessAI.main import runChessAI
 
 class Piece(Enum):
     K = 1
@@ -25,8 +26,8 @@ class BoardCols(Enum):
 
 class Team(Enum):
     W = 1
-    B = 0
-    NULL = -1
+    B = -1
+    NULL = 0
 
 class Board():
     def __init__(self):
@@ -35,12 +36,12 @@ class Board():
         self.height = 750
         self.teamColorOffset = 10
         self.pieceColorDict = {
-            Piece.K: ([140,0,0], [255,150,127]),
-            Piece.Q: ([0,0,127], [120,127,255]),
-            Piece.B: ([100,127,127], [200,255,255]),
-            Piece.N: ([0,127,0], [160,225,127]),
-            Piece.R: ([120,0,127], [255,127,255]),
-            Piece.P: ([160,150,0], [255,255,127])
+            Piece.K: ([127,0,0], [255,127,127]),
+            Piece.Q: ([0,0,127], [127,127,255]),
+            Piece.B: ([0,127,127], [127,255,255]),
+            Piece.N: ([0,127,0], [127,225,127]),
+            Piece.R: ([127,0,127], [255,127,255]),
+            Piece.P: ([127,127,0], [255,255,127])
         }
         self.boardArray = np.zeros((8,8,2))
         # self.boardArray = [
@@ -58,7 +59,26 @@ class Board():
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1024)
         time.sleep(0.500)
-        return (cap.read()[1])
+        rawImage = cap.read()[1]
+        enhancedImage = rawImage.copy()
+
+        #Enhancing Saturation and reducing brightness to help identify colors
+        hsvImg = cv2.cvtColor(rawImage,cv2.COLOR_BGR2HSV)
+
+        #multiple by a factor to change the saturation
+        hsvImg[...,1] = hsvImg[...,1]*20 #2.2
+
+        #multiple by a factor of less than 1 to reduce the brightness 
+        hsvImg[...,2] = hsvImg[...,2]*0.7 #0.6
+
+        # Smooth out image to reduce noise
+        smoothingSize = 5
+        kernel = np.ones((smoothingSize,smoothingSize),np.float32)/(smoothingSize*smoothingSize)
+        enhancedImage=cv2.filter2D(cv2.cvtColor(hsvImg,cv2.COLOR_HSV2BGR),-1,kernel)
+        cv2.imshow('AnalyseSpot',enhancedImage)
+        # cv2.imshow("Raw", rawImage)
+        cv2.waitKey(0)
+        return enhancedImage, rawImage
 
     def findPiecesLoc(self, image):
         # Convert image to grayscale
@@ -142,12 +162,12 @@ class Board():
         cv2.putText(image, Team(teamValue).name + Piece(pieceType).name, (orgX, orgY), font, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
         return image
 
-    def generateBoard(self,rawImage):
+    def generateBoard(self,rawImage, saturatedImage):
         locations, processedImage, grayImage = self.findPiecesLoc(rawImage)
         processedImage = self.drawGrid(processedImage)
         for location in locations:
             # cv2.imshow('RawImage',rawImage)
-            row, col, pieceType, team = self.identifyPiece(location, rawImage)
+            row, col, pieceType, team = self.identifyPiece(location, saturatedImage)
             self.updateBoardArray(row,col,pieceType,team)
             processedImage = self.addPiecesToImage(processedImage, row, col)
         return processedImage
@@ -158,8 +178,8 @@ class Game():
 
     def captureBoard(self):
         board = Board()
-        rawImage = board.takeRawImage()
-        processedImage = board.generateBoard(rawImage)
+        saturatedImage, rawImage = board.takeRawImage()
+        processedImage = board.generateBoard(rawImage, saturatedImage)
         return board, processedImage
 
     def detectMove(self, preBoard, postBoard):
@@ -177,25 +197,48 @@ class Game():
             move_str = moveInput.replace(" ","")
             pass
         else:
-            # Property Change:: prePos = 2: White - Null, postPos = -1: Black - White or -2: Null - White
+            # Property Change:: prePos = 1: White - Null, postPos = -2: Black - White or -1: Null - White
             for location in changedLocations:
-                if changeBoard[location[0]][location[1]][0] == 2:
+                if changeBoard[location[0]][location[1]][0] == 1:
                     prePos = BoardCols(location[1]+1).name + (location[0] + 1)
-                if changeBoard[location[0]][location[1]][0] == -1 or changeBoard[location[0]][location[1]][0] == -2:
+                if changeBoard[location[0]][location[1]][0] == -2 or changeBoard[location[0]][location[1]][0] == -1:
                     postPos = BoardCols(location[1]+1).name + (location[0] + 1)
             move_str = prePos + postPos
         return move_str #, team, piece
 
+    def makeAIMove(ai_move, postBoard):
+        # From ai_move castling move is bool x and y are 0 indexed
+            # def __init__(self, xfrom, yfrom, xto, yto, castling_move):
+            # self.xfrom = xfrom
+            # self.yfrom = yfrom
+            # self.xto = xto
+            # self.yto = yto
+            # self.castling_move = castling_move
+        
+        # Check if piece is castling
+        pass
+
+        # Check if piece is being captured
+        pass
+
+        # Run trajectory planning function with above knowledge
+
+    def planTrajectory(preLoc, postLoc, pieceType, castling):
+
+        pass
+
 
 if __name__ == "__main__":
-    chessGame = Game()
-    preBoard, preProcessedImage = chessGame.captureBoard()
-    cv2.imshow('PreBoard',preProcessedImage)
-    cv2.waitKey(0)
-    postBoard, postProcessedImage = chessGame.captureBoard()
-    cv2.imshow('PostBoard', postProcessedImage)
-    cv2.waitKey(0)
-    move_str = chessGame.detectMove(preBoard, postBoard)
+    # chessGame = Game()
+    # runChessAI()
+    # preBoard, preProcessedImage = chessGame.captureBoard()
+    # cv2.imshow('PreBoard',preProcessedImage)
+    # cv2.waitKey(0)
+    # postBoard, postProcessedImage = chessGame.captureBoard()
+    # cv2.imshow('PostBoard', postProcessedImage)
+    # cv2.waitKey(0)
+    # move_str = chessGame.detectMove(preBoard, postBoard)
+
     # prePosition, postPosition, team, piece = chessGame.detectMove(preBoard, postBoard)
     pass
     
