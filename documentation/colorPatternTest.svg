@@ -56,7 +56,7 @@
        y="82.979843"
        ry="0.78301793" />
     <g
-       id="g7870">
+       id="g3004">
       <circle
          style="fill:#000000;stroke-width:1.93851;stroke-linecap:round;stroke-linejoin:round"
          id="path846"
@@ -65,32 +65,31 @@
          r="47.244095"
          transform="rotate(90)" />
       <circle
-         style="fill:#ffff00;fill-opacity:1;stroke-width:2.97957;stroke-linecap:round;stroke-linejoin:round"
+         style="fill:#ffff00;fill-opacity:1;stroke-width:5.95915;stroke-linecap:round;stroke-linejoin:round"
          id="path950"
          cx="355.59845"
          cy="-132.59842"
-         r="9.4488192"
+         r="18.897638"
          transform="rotate(90)" />
     </g>
     <g
-       id="g7846">
+       id="g1922"
+       transform="rotate(90,-246.09766,501.88538)">
       <circle
          style="fill:#000000;stroke-width:1.93851;stroke-linecap:round;stroke-linejoin:round"
          id="circle1918"
-         cx="900.83557"
-         cy="-132.59843"
-         r="47.244095"
-         transform="rotate(90)" />
+         cx="152.85252"
+         cy="123.18929"
+         r="47.244095" />
       <circle
-         style="fill:#ff0000;fill-opacity:1;stroke-width:2.97957;stroke-linecap:round;stroke-linejoin:round"
+         style="fill:#ff0000;fill-opacity:1;stroke-width:5.95915;stroke-linecap:round;stroke-linejoin:round"
          id="circle1920"
-         cx="900.83557"
-         cy="-132.59843"
-         r="9.4488192"
-         transform="rotate(90)" />
+         cx="152.85252"
+         cy="123.18929"
+         r="18.897638" />
     </g>
     <g
-       id="g7850">
+       id="g3010">
       <circle
          style="fill:#000000;stroke-width:1.55081;stroke-linecap:round;stroke-linejoin:round"
          id="circle1924"
@@ -99,15 +98,15 @@
          r="37.795277"
          transform="rotate(90)" />
       <circle
-         style="fill:#00ff00;fill-opacity:1;stroke-width:2.97957;stroke-linecap:round;stroke-linejoin:round"
+         style="fill:#00ff00;fill-opacity:1;stroke-width:5.95915;stroke-linecap:round;stroke-linejoin:round"
          id="circle1926"
          cx="719.08984"
          cy="-132.59843"
-         r="9.4488192"
+         r="18.897638"
          transform="rotate(90)" />
     </g>
     <g
-       id="g7866">
+       id="g2452">
       <circle
          style="fill:#000000;stroke-width:1.93851;stroke-linecap:round;stroke-linejoin:round"
          id="circle1948"
@@ -116,11 +115,11 @@
          r="47.244095"
          transform="rotate(90)" />
       <circle
-         style="fill:#0000ff;fill-opacity:1;stroke-width:2.97957;stroke-linecap:round;stroke-linejoin:round"
+         style="fill:#0000ff;fill-opacity:1;stroke-width:5.95915;stroke-linecap:round;stroke-linejoin:round"
          id="circle1950"
          cx="537.34412"
          cy="-132.59843"
-         r="9.4488192"
+         r="18.897638"
          transform="rotate(90)" />
     </g>
     <circle
@@ -131,11 +130,11 @@
        r="47.244095"
        transform="rotate(90)" />
     <circle
-       style="fill:#ff00ff;fill-opacity:1;stroke-width:2.97957;stroke-linecap:round;stroke-linejoin:round"
+       style="fill:#ff00ff;fill-opacity:1;stroke-width:5.95915;stroke-linecap:round;stroke-linejoin:round"
        id="circle1956"
        cx="173.85269"
        cy="-132.59843"
-       r="9.4488192"
+       r="18.897638"
        transform="rotate(90)" />
     <rect
        style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:7.23067;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1"
@@ -178,20 +177,21 @@
        y="82.979843"
        ry="0.78301793" />
     <g
-       id="g7886">
+       id="g2992"
+       transform="translate(346.48232,-22.627415)">
       <circle
          style="fill:#000000;stroke-width:1.93851;stroke-linecap:round;stroke-linejoin:round"
          id="circle2272"
-         cx="173.85268"
-         cy="-684.8681"
+         cx="196.4801"
+         cy="-338.38577"
          r="47.244095"
          transform="rotate(90)" />
       <circle
-         style="fill:#00ffff;fill-opacity:1;stroke-width:2.97957;stroke-linecap:round;stroke-linejoin:round"
+         style="fill:#00ffff;fill-opacity:1;stroke-width:5.95915;stroke-linecap:round;stroke-linejoin:round"
          id="circle2274"
-         cx="173.85268"
-         cy="-684.8681"
-         r="9.4488192"
+         cx="196.4801"
+         cy="-338.38577"
+         r="18.897638"
          transform="rotate(90)" />
     </g>
     <rect
@@ -235,105 +235,111 @@
        y="82.979843"
        ry="0.78301793" />
     <g
-       id="g7858">
+       id="g5320"
+       transform="translate(-169.70563,285.67114)">
       <circle
          style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:4.37242;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          id="circle3678"
-         cx="856.08142"
-         cy="-358.11523"
+         cx="570.41028"
+         cy="-527.82086"
          r="45.057884"
          transform="rotate(90)" />
       <circle
-         style="fill:#0000ff;fill-opacity:1;stroke-width:2.97957;stroke-linecap:round;stroke-linejoin:round"
+         style="fill:#0000ff;fill-opacity:1;stroke-width:5.95915;stroke-linecap:round;stroke-linejoin:round"
          id="circle3680"
-         cx="856.08142"
-         cy="-358.11523"
-         r="9.4488192"
+         cx="570.41028"
+         cy="-527.82086"
+         r="18.897638"
          transform="rotate(90)" />
     </g>
     <g
-       id="g7854">
+       id="g4592"
+       transform="translate(-190.91883,373.35238)">
       <circle
          style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:3.49794;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          id="circle4348"
-         cx="696.72595"
-         cy="-324.62482"
+         cx="323.3736"
+         cy="-515.54364"
          r="36.046307"
          transform="rotate(90)" />
       <circle
-         style="fill:#00ff00;fill-opacity:1;stroke-width:2.97957;stroke-linecap:round;stroke-linejoin:round"
+         style="fill:#00ff00;fill-opacity:1;stroke-width:5.95915;stroke-linecap:round;stroke-linejoin:round"
          id="circle4350"
-         cx="696.72595"
-         cy="-324.62482"
-         r="9.4488192"
+         cx="323.3736"
+         cy="-515.54364"
+         r="18.897638"
          transform="rotate(90)" />
     </g>
     <g
-       id="g7878">
+       id="g5746"
+       transform="translate(-301.2275,-104.6518)">
       <circle
          style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:4.37242;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          id="circle4606"
-         cx="208.37161"
-         cy="-341.14468"
+         cx="313.02341"
+         cy="-642.37219"
          r="45.057884"
          transform="rotate(90)" />
       <circle
-         style="fill:#ff0000;fill-opacity:1;stroke-width:2.97957;stroke-linecap:round;stroke-linejoin:round"
+         style="fill:#ff0000;fill-opacity:1;stroke-width:5.95915;stroke-linecap:round;stroke-linejoin:round"
          id="circle4608"
-         cx="208.37161"
-         cy="-341.14468"
-         r="9.4488192"
+         cx="313.02341"
+         cy="-642.37219"
+         r="18.897638"
          transform="rotate(90)" />
     </g>
     <g
-       id="g7874">
+       id="g4616"
+       transform="translate(-186.67619,183.84777)">
       <circle
          style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:4.37242;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          id="circle4612"
-         cx="331.40817"
-         cy="-349.62997"
+         cx="147.56041"
+         cy="-536.30615"
          r="45.057884"
          transform="rotate(90)" />
       <circle
-         style="fill:#ff00ff;fill-opacity:1;stroke-width:2.97957;stroke-linecap:round;stroke-linejoin:round"
+         style="fill:#ff00ff;fill-opacity:1;stroke-width:5.95915;stroke-linecap:round;stroke-linejoin:round"
          id="circle4614"
-         cx="331.40817"
-         cy="-349.62997"
-         r="9.4488192"
+         cx="147.56041"
+         cy="-536.30615"
+         r="18.897638"
          transform="rotate(90)" />
     </g>
     <g
-       id="g7862">
+       id="g4868"
+       transform="translate(-403.05086,316.78384)">
       <circle
          style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:4.37242;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          id="circle4618"
-         cx="499.69958"
-         cy="-277.50504"
+         cx="182.91576"
+         cy="-680.55591"
          r="45.057884"
          transform="rotate(90)" />
       <circle
-         style="fill:#ffff00;fill-opacity:1;stroke-width:2.97957;stroke-linecap:round;stroke-linejoin:round"
+         style="fill:#ffff00;fill-opacity:1;stroke-width:5.95915;stroke-linecap:round;stroke-linejoin:round"
          id="circle4620"
-         cx="499.69958"
-         cy="-277.50504"
-         r="9.4488192"
+         cx="182.91576"
+         cy="-680.55591"
+         r="18.897638"
          transform="rotate(90)" />
     </g>
     <g
-       id="g7882">
+       id="g5650"
+       transform="translate(-202.23253,-309.71277)">
       <circle
          style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:4.37242;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          id="circle4624"
-         cx="173.01627"
-         cy="-495.29395"
+         cx="482.72903"
+         cy="-697.52649"
          r="45.057884"
          transform="rotate(90)" />
       <circle
-         style="fill:#00ffff;fill-opacity:1;stroke-width:2.97957;stroke-linecap:round;stroke-linejoin:round"
+         style="fill:#00ffff;fill-opacity:1;stroke-width:5.95915;stroke-linecap:round;stroke-linejoin:round"
          id="circle4626"
-         cx="173.01627"
-         cy="-495.29395"
-         r="9.4488192"
+         cx="482.72903"
+         cy="-697.52649"
+         r="18.897638"
          transform="rotate(90)" />
     </g>
   </g>
