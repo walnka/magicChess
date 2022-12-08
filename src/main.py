@@ -30,7 +30,7 @@ def get_user_move(attempt):
 
 # Returns a valid move based on the users input.
 def get_valid_user_move(board):
-    attempt = 2
+    attempt = 1
     while True:
         move, postBoard, postProcessedImage = get_user_move(attempt)
         attempt = 2

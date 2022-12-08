@@ -3,7 +3,8 @@ import numpy as np
 import time
 from enum import Enum
 from collections import Counter
-from chessAI.main import runChessAI
+import serial
+
 
 class Piece(Enum):
     K = 1
@@ -66,7 +67,7 @@ class Board():
         hsvImg = cv2.cvtColor(rawImage,cv2.COLOR_BGR2HSV)
 
         #multiple by a factor to change the saturation
-        hsvImg[...,1] = hsvImg[...,1]*20 #2.2
+        hsvImg[...,1] = hsvImg[...,1]*25 #2.2
 
         #multiple by a factor of less than 1 to reduce the brightness 
         hsvImg[...,2] = hsvImg[...,2]*0.7 #0.6
@@ -96,6 +97,8 @@ class Board():
                 cv2.circle(processedImage, (c[0], c[1]), c[2], (0, 255, 0), 2)
                 cv2.circle(processedImage, (c[0], c[1]), 1, (0, 0, 255), 3)
                 cv2.circle(processedImage, (c[0]+self.teamColorOffset, c[1]+self.teamColorOffset), 1, (0, 0, 0), 1)
+        # cv2.imshow("Circles", processedImage)
+        # cv2.waitKey(0)
         return circ, processedImage, gray
 
     def drawGrid(self,image):
@@ -165,16 +168,22 @@ class Board():
     def generateBoard(self,rawImage, saturatedImage):
         locations, processedImage, grayImage = self.findPiecesLoc(rawImage)
         processedImage = self.drawGrid(processedImage)
+        cv2.imshow("Griddy", processedImage)
+        cv2.waitKey(0)
         for location in locations:
             # cv2.imshow('RawImage',rawImage)
             row, col, pieceType, team = self.identifyPiece(location, saturatedImage)
             self.updateBoardArray(row,col,pieceType,team)
             processedImage = self.addPiecesToImage(processedImage, row, col)
+        cv2.imshow("Generated", processedImage)
+        cv2.waitKey(0)
         return processedImage
 
 class Game():
     def __init__(self):
-        self.a = 1
+        # Setup Serial Communicator
+        self.ser = serial.Serial ("COM12", 19200, timeout=None)    #Open port with baud rate
+        self.moveArray = []
 
     def captureBoard(self):
         board = Board()
@@ -206,7 +215,7 @@ class Game():
             move_str = prePos + postPos
         return move_str #, team, piece
 
-    def makeAIMove(ai_move, postBoard):
+    def makeAIMove(self, ai_move, postBoard):
         # From ai_move castling move is bool x and y are 0 indexed
             # def __init__(self, xfrom, yfrom, xto, yto, castling_move):
             # self.xfrom = xfrom
@@ -222,14 +231,58 @@ class Game():
         pass
 
         # Run trajectory planning function with above knowledge
+        self.planTrajectory(preLoc, postLoc, pieceType, castling)
+        self.transferMovesToBoard()
 
-    def planTrajectory(preLoc, postLoc, pieceType, castling):
-
+    def planTrajectory(self, preLoc, postLoc, pieceType, castling):
+        self.moveArray.append(Move(20000.0, 30000.0, 2))
+        self.moveArray.append(Move(10000.0, 10000.0, 0))
+        self.transferMovesToBoard()
         pass
 
+    def transferMovesToBoard(self):
+        for move in self.moveArray:
+            message = bytearray(move.moveMessage)
+            self.ser.write(message)
+            received_data = self.ser.read(7)              #read serial port
+            receivedMessage = list(received_data)
+            if (receivedMessage[1] != move.instruction):
+                print("Error: Unexpected Movement Response")
+                print(received_data)
+                break
+            print (received_data)                   #print received data
+        if (self.moveArray.size() == move):
+            print("AI move completed")
+        self.moveArray = []
+        pass
+
+class Move():
+    def __init__(self, x, y, instruction):
+        self.instruction = instruction # 1 or 0 for on or off
+        self.decoderByte = 0
+        self.x16bit = round(x) # *0xFFFF/400*40/16
+        self.y16bit = round(y)  #*0xFFFF/400*40/16
+        self.xByte1 = self.x16bit>>8
+        self.xByte2 = self.x16bit&0xFF
+        self.yByte1 = self.y16bit>>8
+        self.yByte2 = self.y16bit&0xFF
+        if (self.xByte1 == 255):
+            self.xByte1 = 0
+            self.decoderByte |= 8
+        if (self.xByte2 == 255):
+            self.xByte2 = 0
+            self.decoderByte |= 4
+        if (self.yByte1 == 255):
+            self.yByte1 = 0
+            self.decoderByte |= 2
+        if (self.yByte2 == 255):
+            self.yByte2 = 0
+            self.decoderByte |= 1 
+        self.moveMessage = [255, self.instruction, self.xByte1, self.xByte2, self.yByte1, self.yByte2, self.decoderByte]       
 
 if __name__ == "__main__":
-    # chessGame = Game()
+    chessGame = Game()
+    chessGame.planTrajectory(0,0,Piece.K,False)
     # runChessAI()
     # preBoard, preProcessedImage = chessGame.captureBoard()
     # cv2.imshow('PreBoard',preProcessedImage)
