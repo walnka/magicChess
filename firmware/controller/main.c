@@ -2,10 +2,6 @@
 
 
 #define bufferSize 150              // Buffer size for UART receiving
-//#define numPhases 8                 // Defined for easier switching between full and half steps during debugging
-//#define xControlRefresh 0x1388      // Delay for x Control Loop during control operation (20ms)
-//#define xRegularRefresh 0xC350      // Delay for x Control Loop during non-control operation (200ms)
-// Note: For smoother slider DC control change xRegularRefresh to 0x1388 (control tuning is off when this happens though)
 
 // UART Variables
 unsigned volatile int circBuffer[bufferSize];                   // For storing received data packets
@@ -18,15 +14,7 @@ unsigned volatile int rxByte = 0;                               // Temporary var
 volatile int rxFlag = 0;                                        // Received data flag, triggered when a packet is received
 volatile int rxIndex = 0;                                       // Counts bytes in data packet
 
-
-
-//volatile int contStepperMode = 0;                               // 0 = No power to motor, 1 = CW dir continuous, -1 = CCW dir continuous, 2 = single step mode
-//
-//// Variables for Y Control (Stepper)
-//unsigned volatile int yr = 0;                                   // Goal loc for Y controller
-//unsigned volatile int yControlFlag = 0;                         // Signals whether Y is in a control loop
-//unsigned int yLoc = 0;                                          // Current location of Y
-
+// Control Variables and constants
 unsigned volatile int xSpeed = 2000;
 unsigned volatile int ySpeed = 2000;
 unsigned volatile int xLoc = 0;
@@ -36,6 +24,9 @@ unsigned volatile int yr = 0;
 volatile int xError = 0;
 volatile int yError = 0;
 unsigned volatile int magnetPower = 0x3E8;
+unsigned volatile int magnetState = 0;
+unsigned volatile int movingState = 0;
+unsigned volatile int calibrationState = 0;
 
 // Function to transmit a UART package given arguments for package
 void transmitPackage(unsigned int instrByte, unsigned int dataByte1, unsigned int dataByte2, unsigned int dataByte3, unsigned int dataByte4){
@@ -88,14 +79,14 @@ int main(void)
     TB0CTL |= TBSSEL_1 + MC_1 + ID_1 + TBCLR;           // ACLK, up mode (16MHz/2 = 8MHz)
     TB0CCTL0 |= CCIE;                               // CCR0 interrupt enable
     TB0CCTL1 |= CCIE;
-    TB0CCR0 = magnetPower; //timerVal;                         // CCR0: interrupt for half step phase switching
+    TB0CCR0 = magnetPower;                         // CCR0: interrupt for half step phase switching
     TB0CCR1 = 0x300;
     // Configure pins for Magnet PWM
     P1DIR |= BIT4 + BIT5;
     P1OUT &= ~(BIT4 + BIT5);
 
     // Configure timer B1 for X Stepper Motor
-    TB1CTL |= TBSSEL_1 + TBIE + MC_1 + TBCLR; // start with timer off
+    TB1CTL |= TBSSEL_1 + TBIE + MC_1 + TBCLR;
     TB1CCTL1 |= OUTMOD_3;
     TB1CCR0 = 0;
     TB1CCR1 = xSpeed/2;
@@ -118,6 +109,18 @@ int main(void)
     P2DIR |= BIT1;
     P2SEL0 |= BIT1;
     P2SEL1 &= ~BIT1;
+
+    // Configure Pin for Y Stepper Direction
+    P3DIR |= BIT3;
+
+    // Initialize Limit Switches
+    P3DIR &= ~(BIT5 + BIT6); // X Axis and Y Axis Respectively
+    P3REN |= BIT5 + BIT6; // Input w/ Pullup or down set
+    P3OUT &= ~(BIT5 + BIT6); // Pull Down Resistor set
+
+    // Initialize Limit Switch Interrupts
+    P3IES |= BIT5 + BIT6; // Set on High to Low Transition
+    P3IE |= BIT5 + BIT6;
 
     // Configure ports for UART
     P2SEL0 &= ~(BIT5 + BIT6);
@@ -169,11 +172,12 @@ int main(void)
             switch(commandByte)
             {
             case 0: // Move with Magnet Off
-                transmitPackage(1, firstDataByte>>8,firstDataByte&0xFF,secondDataByte>>8,secondDataByte&0xFF);
-                P1OUT ^= BIT3;
+//                transmitPackage(1, firstDataByte>>8,firstDataByte&0xFF,secondDataByte>>8,secondDataByte&0xFF);
                 TB0CCR0 = 0;
+                magnetState = 0;
                 xr = firstDataByte;
-                yr = firstDataByte;
+                yr = secondDataByte;
+                movingState = 1;
                 if (xr-xLoc != 0){
                     TB1CCR0 = xSpeed;
                 }
@@ -182,20 +186,42 @@ int main(void)
                 }
                 break;
             case 1: // Move with Magnet On
-                transmitPackage(3, firstDataByte>>8,firstDataByte&0xFF,secondDataByte>>8,secondDataByte&0xFF);
+//                transmitPackage(3, firstDataByte>>8,firstDataByte&0xFF,secondDataByte>>8,secondDataByte&0xFF);
                 TB0CCR0 = magnetPower;
+                magnetState = 1;
                 xr = firstDataByte;
-                yr = firstDataByte;
+                yr = secondDataByte;
+                movingState = 1;
                 if (xr-xLoc != 0){
                     TB1CCR0 = xSpeed;
                 }
                 if (yr-yLoc != 0){
-                    TB2CCR0 =ySpeed;
+                    TB2CCR0 = ySpeed;
                 }
                 break;
             case 2: // Zero Steppers
-                xLoc = 0;
-                yLoc = 0;
+                calibrationState = 1;
+                while(calibrationState == 1){
+                    P3OUT |= BIT3;
+                    P1OUT |= BIT3;
+                    TB1CCR0 = xSpeed;
+                }
+                xr = 1000; // Might not need these parts if only triggers on falling edge
+                movingState = 1;
+                TB1CCR0 = xSpeed;
+                calibrationState = 1;
+                while(calibrationState == 1){
+                    P3OUT &= ~BIT3;
+                    P1OUT &= ~BIT3;
+                    TB2CCR0 = xSpeed;
+                }
+                yr = 1000;
+                movingState = 1;
+                TB1CCR0 = xSpeed;
+//                TB1CCR0 = 0;
+//                TB2CCR0 = 0;
+//                xLoc = 0;
+//                yLoc = 0;
                 transmitPackage(2, xLoc>>8,xLoc&0xFF,yLoc>>8,yLoc&0xFF);
                 break;
             default: // No known command
@@ -209,6 +235,10 @@ int main(void)
 
             // reset the data received flag
             rxFlag = 0;
+        }
+        if (movingState == 1 && xError == 0 && yError == 0){
+            movingState = 0;
+            transmitPackage(magnetState, xLoc>>8, xLoc&0xFF, yLoc>>8, yLoc&0xFF);
         }
     }
     return 0;
@@ -246,51 +276,69 @@ __interrupt void USCI_A1_ISR(void)
 // Timer B1 Overflow Interrupt: Increment X Stepper
 #pragma vector = TIMER1_B1_VECTOR
 __interrupt void IncrementXStepper(void){
-    xError = xr - xLoc;
-    if (xError == 0){
-        TB1CCR0 = 0;
+    if (movingState){
+        xError = xr - xLoc;
+            if (xError == 0){
+                TB1CCR0 = 0;
+            }
+            else if (xError > 0){
+                xLoc++;
+                P1OUT |= BIT3;
+            }
+            else if (xError < 0){
+                xLoc--;
+                P1OUT &= ~BIT3;
+            }
     }
-    else if (xError > 0){
-        xLoc++;
-        // Set Direction to Positive
-    }
-    else if (xError < 0){
-        xLoc--;
-        // Set Direction to Negative
-    }
-    transmitPackage(0, xLoc>>8, xLoc&0xFF, 0, 0);
     TB1CTL &= ~TBIFG;
 }
 
 // Timer B2 Overflow Interrupt: Increment Y Stepper
 #pragma vector = TIMER2_B1_VECTOR
 __interrupt void IncrementYStepper(void){
-    yError = yr - yLoc;
-    if (yError == 0){
-        TB2CCR0 = 0;
+    if (movingState){
+        yError = yr - yLoc;
+           if (yError == 0){
+               TB2CCR0 = 0;
+           }
+           else if (yError > 0){
+               yLoc++;
+               P3OUT |= BIT3;
+           }
+           else if (yError < 0){
+               yLoc--;
+               P3OUT &= ~BIT3;
+           }
     }
-    else if (yError > 0){
-        yLoc++;
-        // Set Direction to Positive
-    }
-    else if (yError < 0){
-        yLoc--;
-        // Set Direction to Negative
-    }
-    transmitPackage(1, yLoc>>8, yLoc&0xFF, yr>>8, yr&0xFF);
     TB2CTL &= ~TBIFG;
 }
 
-// Timer B1 CCR1 Interrupt: Turn off stepper phases for PWM
+// Timer B1 CCR1 Interrupt: Turn off stepper phases for magnet
 #pragma vector = TIMER0_B1_VECTOR
 __interrupt void TurnOffStepperPhases(void){
     P1OUT |= BIT4;
     TB0CCTL1 &= ~CCIFG;
 }
 
-// Timer B1 CCR0 Interrupt: Turn on proper stepper phases for PWM
+// Timer B1 CCR0 Interrupt: Turn on proper stepper phases for magnet
 #pragma vector = TIMER0_B0_VECTOR
 __interrupt void TurnOnStepperPhases(void){
     P1OUT &= ~BIT4;
     TB0CCTL0 &= ~CCIFG;
+}
+
+// Limit Switch Interrupt
+#pragma vector = PORT3_VECTOR
+__interrupt void SwitchToggle (void){
+    TB1CCR0 = 0;
+    TB2CCR0 = 0;
+    calibrationState = 0;
+    if (P3IV & BIT5){
+        xLoc = 0;
+        P3IFG &= ~BIT5;
+    }
+    if (P3IV & BIT6){
+        yLoc = 0;
+        P3IFG &= ~BIT6;
+    }
 }
