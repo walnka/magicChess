@@ -39,10 +39,10 @@ class Board():
         self.pieceColorDict = {
             Piece.K: ([127,0,0], [255,127,127]),
             Piece.Q: ([0,0,127], [127,127,255]),
-            Piece.B: ([0,127,127], [127,255,255]),
-            Piece.N: ([0,127,0], [127,225,127]),
-            Piece.R: ([127,0,127], [255,127,255]),
-            Piece.P: ([127,127,0], [255,255,127])
+            Piece.B: ([150,150,150], [255,255,255]),
+            Piece.N: ([0,110,0], [150,255,150]),
+            Piece.R: ([127,0,100], [255,180,255]),
+            Piece.P: ([0,0,0], [200,200,200])
         }
         self.boardArray = np.zeros((8,8,2))
         # self.boardArray = [
@@ -67,10 +67,10 @@ class Board():
         hsvImg = cv2.cvtColor(rawImage,cv2.COLOR_BGR2HSV)
 
         #multiple by a factor to change the saturation
-        hsvImg[...,1] = hsvImg[...,1]*25 #2.2
+        hsvImg[...,1] = hsvImg[...,1]*1 #2.2
 
         #multiple by a factor of less than 1 to reduce the brightness 
-        hsvImg[...,2] = hsvImg[...,2]*0.7 #0.6
+        hsvImg[...,2] = hsvImg[...,2]*0.8 #0.6
 
         # Smooth out image to reduce noise
         smoothingSize = 5
@@ -182,7 +182,7 @@ class Board():
 class Game():
     def __init__(self):
         # Setup Serial Communicator
-        self.ser = serial.Serial ("COM12", 19200, timeout=None)    #Open port with baud rate
+        # self.ser = serial.Serial ("COM12", 19200, timeout=None)    #Open port with baud rate
         self.moveArray = []
 
     def captureBoard(self):
