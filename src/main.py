@@ -17,6 +17,7 @@ def get_user_move(attempt):
         print("Example Move: A2 A4")
         move_str = input("Your Move: ")
         move_str = move_str.replace(" ", "")
+        postBoard, postProcessedImage = chessGame.captureBoard()
 
     try:
         xfrom = letter_to_xpos(move_str[0:1])

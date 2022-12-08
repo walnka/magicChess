@@ -32,29 +32,23 @@ class Team(Enum):
 
 class Board():
     def __init__(self):
-        self.origin = [320,80]
-        self.width = 750
-        self.height = 750
+        self.origin = [260,50]
+        self.width = 800
+        self.height = 800
         self.teamColorOffset = 10
         self.pieceColorDict = {
-            Piece.K: ([127,0,0], [255,127,127]),
+            Piece.K: ([127,0,0], [255,127,100]),
             Piece.Q: ([0,0,127], [127,127,255]),
             Piece.B: ([150,150,150], [255,255,255]),
             Piece.N: ([0,110,0], [150,255,150]),
-            Piece.R: ([127,0,100], [255,180,255]),
-            Piece.P: ([0,0,0], [200,200,200])
+            Piece.R: ([127,0,100], [255,180,200]),
+            Piece.P: ([0,0,0], [100,100,100])
         }
         self.boardArray = np.zeros((8,8,2))
-        # self.boardArray = [
-        #     [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]],
-        #     [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]],
-        #     [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]],
-        #     [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]],
-        #     [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]],
-        #     [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]],
-        #     [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]],
-        #     [[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL],[Team.NULL, Piece.NULL]]
-        # ]
+        self.outOfGameLoc = [0,400]
+        self.actualWidth = 400 # mm
+        self.actualHeight = 400 # mm
+
     def takeRawImage(self):
         cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
@@ -73,7 +67,7 @@ class Board():
         hsvImg[...,2] = hsvImg[...,2]*0.8 #0.6
 
         # Smooth out image to reduce noise
-        smoothingSize = 5
+        smoothingSize = 6
         kernel = np.ones((smoothingSize,smoothingSize),np.float32)/(smoothingSize*smoothingSize)
         enhancedImage=cv2.filter2D(cv2.cvtColor(hsvImg,cv2.COLOR_HSV2BGR),-1,kernel)
         cv2.imshow('AnalyseSpot',enhancedImage)
@@ -178,11 +172,21 @@ class Board():
         cv2.imshow("Generated", processedImage)
         cv2.waitKey(0)
         return processedImage
+            
+    def convertToBoardCoord(self, row, col):
+        # row and col should be numbers
+        x = col*self.actualWidth/8+self.actualWidth/16
+        y = row*self.actualHeight/8+self.actualHeight/16
+        A = x
+        B = y
+        A16bit = A*80 #A mm * 80 step/mm 
+        B16bit = B*80 #B mm * 80 step/mm
+        return [A16bit, B16bit]
 
 class Game():
     def __init__(self):
         # Setup Serial Communicator
-        # self.ser = serial.Serial ("COM12", 19200, timeout=None)    #Open port with baud rate
+        self.ser = serial.Serial ("COM12", 19200, timeout=None)    #Open port with baud rate
         self.moveArray = []
 
     def captureBoard(self):
@@ -209,9 +213,9 @@ class Game():
             # Property Change:: prePos = 1: White - Null, postPos = -2: Black - White or -1: Null - White
             for location in changedLocations:
                 if changeBoard[location[0]][location[1]][0] == 1:
-                    prePos = BoardCols(location[1]+1).name + (location[0] + 1)
+                    prePos = BoardCols(location[1]+1).name + str(location[0] + 1)
                 if changeBoard[location[0]][location[1]][0] == -2 or changeBoard[location[0]][location[1]][0] == -1:
-                    postPos = BoardCols(location[1]+1).name + (location[0] + 1)
+                    postPos = BoardCols(location[1]+1).name + str(location[0] + 1)
             move_str = prePos + postPos
         return move_str #, team, piece
 
@@ -223,21 +227,35 @@ class Game():
             # self.xto = xto
             # self.yto = yto
             # self.castling_move = castling_move
-        
-        # Check if piece is castling
-        pass
 
         # Check if piece is being captured
-        pass
+        if postBoard.boardArray[ai_move.yto][ai_move.xto][0] == Team.W:
+            edgeMove = True
+            #Convert col and row to location
+            A1, B1 = postBoard.convertToBoardCoord(ai_move.yto,ai_move.xto)
+            self.moveArray.append(Move(A1, B1, 0)) # Start by moving to piece to be removed with no magnet
+            A2, B2 = postBoard.convertToBoardCoord(postBoard.outOfGameLoc[1],postBoard.outOfGameLoc[0])
+            self.moveArray.append(Move(A2, B2, 1)) # Next move to OoB location with magnet
+
+        # Next check is piece is castling
+        if ai_move.castling_move:
+            A3, B3 = postBoard.convertToBoardCoord(postBoard.outOfGameLoc[1],postBoard.outOfGameLoc[0])
+            self.moveArray.append(Move(A2, B2, 1)) # Next move to OoB location with magnet            
+            pass
+        else:
+            A5, B5 = postBoard.convertToBoardCoord(ai_move.yfrom,ai_move.xfrom)
+            self.moveArray.append(Move(A5, B5, 0)) # Move to ai piece to move with no magnet
+            A6, B6 = postBoard.convertToBoardCoord(ai_move.yto, ai_move.xto)
+            self.moveArray.append(Move(A6, B6, 1)) # Move to final AI location with magnet
 
         # Run trajectory planning function with above knowledge
-        self.planTrajectory(preLoc, postLoc, pieceType, castling)
         self.transferMovesToBoard()
 
-    def planTrajectory(self, preLoc, postLoc, pieceType, castling):
+    def planTrajectory(self, preLoc, postLoc, edgeMove, castling):
+        # edgeMove is bool telling whether piece is moving on edges or not
         self.moveArray.append(Move(20000.0, 30000.0, 2))
         self.moveArray.append(Move(10000.0, 10000.0, 0))
-        self.transferMovesToBoard()
+        # self.transferMovesToBoard()
         pass
 
     def transferMovesToBoard(self):
@@ -251,7 +269,7 @@ class Game():
                 print(received_data)
                 break
             print (received_data)                   #print received data
-        if (self.moveArray.size() == move):
+        if (len(self.moveArray) == move):
             print("AI move completed")
         self.moveArray = []
         pass
