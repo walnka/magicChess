@@ -178,10 +178,12 @@ int main(void)
                 xr = firstDataByte;
                 yr = secondDataByte;
                 movingState = 1;
-                if (xr-xLoc != 0){
+                xError = xr-xLoc;
+                yError = yr-yLoc;
+                if (xError != 0){
                     TB1CCR0 = xSpeed;
                 }
-                if (yr-yLoc != 0){
+                if (yError != 0){
                     TB2CCR0 = ySpeed;
                 }
                 break;
@@ -192,10 +194,12 @@ int main(void)
                 xr = firstDataByte;
                 yr = secondDataByte;
                 movingState = 1;
-                if (xr-xLoc != 0){
+                xError = xr-xLoc;
+                yError = yr-yLoc;
+                if (xError != 0){
                     TB1CCR0 = xSpeed;
                 }
-                if (yr-yLoc != 0){
+                if (yError != 0){
                     TB2CCR0 = ySpeed;
                 }
                 break;
@@ -238,6 +242,8 @@ int main(void)
         }
         if (movingState == 1 && xError == 0 && yError == 0){
             movingState = 0;
+            TB2CCR0 = 0;
+            TB1CCR0 = 0;
             transmitPackage(magnetState, xLoc>>8, xLoc&0xFF, yLoc>>8, yLoc&0xFF);
         }
     }
