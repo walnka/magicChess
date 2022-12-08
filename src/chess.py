@@ -234,28 +234,45 @@ class Game():
             #Convert col and row to location
             A1, B1 = postBoard.convertToBoardCoord(ai_move.yto,ai_move.xto)
             self.moveArray.append(Move(A1, B1, 0)) # Start by moving to piece to be removed with no magnet
-            A2, B2 = postBoard.convertToBoardCoord(postBoard.outOfGameLoc[1],postBoard.outOfGameLoc[0])
-            self.moveArray.append(Move(A2, B2, 1)) # Next move to OoB location with magnet
+            A2, B2 = postBoard.convertToBoardCoord(ai_move.yto-0.5,ai_move.xto)
+            self.moveArray.append(Move(A2, B2, 1)) # Move to forward edge of square
+            A3, B3 = postBoard.convertToBoardCoord(ai_move.yto-0.5,-0.5)
+            self.moveArray.append(Move(A3, B3, 1)) # Next move to OoB location with magnet
 
         # Next check is piece is castling
         if ai_move.castling_move:
-            A3, B3 = postBoard.convertToBoardCoord(postBoard.outOfGameLoc[1],postBoard.outOfGameLoc[0])
-            self.moveArray.append(Move(A2, B2, 1)) # Next move to OoB location with magnet            
+            A4, B4 = postBoard.convertToBoardCoord(postBoard.outOfGameLoc[1],postBoard.outOfGameLoc[0])
+            self.moveArray.append(Move(A4, B4, 1)) # Next move to OoB location with magnet            
             pass
         else:
             A5, B5 = postBoard.convertToBoardCoord(ai_move.yfrom,ai_move.xfrom)
             self.moveArray.append(Move(A5, B5, 0)) # Move to ai piece to move with no magnet
-            A6, B6 = postBoard.convertToBoardCoord(ai_move.yto, ai_move.xto)
-            self.moveArray.append(Move(A6, B6, 1)) # Move to final AI location with magnet
+            if (postBoard.boardArray[ai_move.yfrom][ai_move.xfrom] == Piece.N):
+                dX = ai_move.xto - ai_move.xfrom
+                dY = ai_move.yto - ai_move.yfrom
+                A6, B6 = postBoard.convertToBoardCoord(ai_move.yfrom+0.5*np.sign(dY),ai_move.xfrom+0.5*np.sign(dX))
+                self.moveArray.append(Move(A6, B6, 1)) # Move to corner of square depending on quadrant
+                if (dY > dX):
+                    A7, B7 = postBoard.convertToBoardCoord(ai_move.yto,ai_move.xfrom+0.5*np.sign(dX))
+                    self.moveArray.append(Move(A7, B7, 1)) # Move to ai piece to move with no magnet
+                else:
+                    A7, B7 = postBoard.convertToBoardCoord(ai_move.yto+0.5*np.sign(dY),ai_move.xto)
+                    self.moveArray.append(Move(A7, B7, 1)) # Move to ai piece to move with no magnet
+                # A8, B8 = postBoard.convertToBoardCoord(ai_move.yto,ai_move.xto)
+                # self.moveArray.append(Move(A7, B7, 1)) # Move to ai piece to move with no magnet
+            # else:      
+            A8, B8 = postBoard.convertToBoardCoord(ai_move.yto, ai_move.xto)
+            self.moveArray.append(Move(A8, B8, 1)) # Move to final AI location with magnet
 
         # Run trajectory planning function with above knowledge
         self.transferMovesToBoard()
 
     def planTrajectory(self, preLoc, postLoc, edgeMove, castling):
         # edgeMove is bool telling whether piece is moving on edges or not
-        self.moveArray.append(Move(20000.0, 30000.0, 2))
-        self.moveArray.append(Move(10000.0, 10000.0, 0))
-        # self.transferMovesToBoard()
+        self.moveArray.append(Move(32000.0, 32000.0, 0))
+        self.moveArray.append(Move(10000.0, 10000.0, 1))
+        # self.moveArray.append(Move(10000.0, 10000.0, 2))
+        self.transferMovesToBoard()
         pass
 
     def transferMovesToBoard(self):
