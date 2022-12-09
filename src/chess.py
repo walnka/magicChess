@@ -37,11 +37,11 @@ class Board():
         self.height = 800
         self.teamColorOffset = 10
         self.pieceColorDict = {
-            Piece.K: ([127,0,0], [255,127,100]),
-            Piece.Q: ([0,0,127], [127,127,255]),
-            Piece.B: ([150,150,150], [255,255,255]),
-            Piece.N: ([0,110,0], [150,255,150]),
-            Piece.R: ([127,0,100], [255,180,200]),
+            Piece.K: ([127,0,0], [255,130,100]),
+            Piece.Q: ([0,0,180], [180,160,255]),
+            Piece.B: ([175,175,175], [255,255,255]),
+            Piece.N: ([0,127,0], [210,255,180]),
+            Piece.R: ([100,0,100], [255,175,210]),
             Piece.P: ([0,0,0], [100,100,100])
         }
         self.boardArray = np.zeros((8,8,2))
@@ -64,14 +64,21 @@ class Board():
         hsvImg[...,1] = hsvImg[...,1]*1 #2.2
 
         #multiple by a factor of less than 1 to reduce the brightness 
-        hsvImg[...,2] = hsvImg[...,2]*0.8 #0.6
+        hsvImg[...,2] = hsvImg[...,2]*1 #0.6
 
         # Smooth out image to reduce noise
         smoothingSize = 6
         kernel = np.ones((smoothingSize,smoothingSize),np.float32)/(smoothingSize*smoothingSize)
         enhancedImage=cv2.filter2D(cv2.cvtColor(hsvImg,cv2.COLOR_HSV2BGR),-1,kernel)
+
+        # Histogram Method
+        # histoImage = cv2.cvtColor(rawImage,cv2.COLOR_BGR2GRAY)
+        # histoImage = cv2.equalizeHist(histoImage)
+        # enhancedImage = cv2.cvtColor(histoImage,cv2.COLOR_GRAY2BGR)
+
+        cv2.imshow("Raw", rawImage)
+        cv2.waitKey(0)        
         cv2.imshow('AnalyseSpot',enhancedImage)
-        # cv2.imshow("Raw", rawImage)
         cv2.waitKey(0)
         return enhancedImage, rawImage
 
@@ -80,7 +87,7 @@ class Board():
         processedImage = image.copy()
         gray = cv2.GaussianBlur(cv2.cvtColor(processedImage, cv2.COLOR_BGR2GRAY),(7,7),1.9)
         # Use Hough Circle 
-        circ = cv2.HoughCircles(gray,cv2.HOUGH_GRADIENT, 1.0, 20, param1=80, param2=35, minRadius=15, maxRadius=30)
+        circ = cv2.HoughCircles(gray,cv2.HOUGH_GRADIENT, 1.0, 25, param1=100, param2=35, minRadius=15, maxRadius=30)
 
         if circ is not None:
             circ = np.uint16(np.around(circ))[0,:]
@@ -123,13 +130,28 @@ class Board():
         # cv2.waitKey(0)
         pieceType = Piece.NULL.value
         typeColor = image[location[1], location[0]]
-        # cv2.imshow('AnalyseSpot',image[location[1]-self.teamColorOffset:location[1]+self.teamColorOffset, location[0]-self.teamColorOffset:location[0]+self.teamColorOffset])
-        # cv2.waitKey(0)
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        orgX = round((self.origin[0] + (BoardCols(col).value-1)*self.width/8 - 5)) #  + self.width/16
+        orgY = round((self.origin[1] + (row-1)*self.height/8+self.height/8-5)) # + self.height/16
+        cv2.putText(image, "[" + str(typeColor[0]) + "," + str(typeColor[1]) + "," + str(typeColor[2]) + "]", (orgX, orgY), font, 0.4, (0, 255, 255), 1, cv2.LINE_AA)
         pass
         for piece, pieceColor in self.pieceColorDict.items():
-            if pieceColor[0][0] < typeColor[0] < pieceColor[1][0] and pieceColor[0][1] < typeColor[1] < pieceColor[1][1] and pieceColor[0][2] < typeColor[2] < pieceColor[1][2]:
+            Blow = pieceColor[0][0]
+            Bhigh = pieceColor[1][0]
+            Glow = pieceColor[0][1]
+            Ghigh = pieceColor[1][1]
+            Rlow = pieceColor[0][2]
+            Rhigh = pieceColor[1][2]
+            identifyB = typeColor[0]
+            identifyG = typeColor[1]
+            identifyR = typeColor[2]
+            testB = pieceColor[0][0] < typeColor[0] < pieceColor[1][0]
+            testG = pieceColor[0][1] < typeColor[1] < pieceColor[1][1]
+            testR = pieceColor[0][2] < typeColor[2] < pieceColor[1][2]
+            if (pieceColor[0][0] <= typeColor[0] <= pieceColor[1][0]) and (pieceColor[0][1] <= typeColor[1] <= pieceColor[1][1]) and (pieceColor[0][2] <= typeColor[2] <= pieceColor[1][2]):
                 pieceType = piece.value
                 break
+        pass
         
         # Identify Team of piece
         bwImage = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -145,7 +167,7 @@ class Board():
         else:
             team = Team.NULL.value
             print("Team not Recognized")
-        return row,col,pieceType,team
+        return row,col,pieceType,team,image
 
     def updateBoardArray(self,row,col,pieceType,team):
         self.boardArray[row-1][BoardCols(col).value-1] = [team, pieceType]
@@ -166,9 +188,11 @@ class Board():
         cv2.waitKey(0)
         for location in locations:
             # cv2.imshow('RawImage',rawImage)
-            row, col, pieceType, team = self.identifyPiece(location, saturatedImage)
+            row, col, pieceType, team, saturatedImage = self.identifyPiece(location, saturatedImage)
             self.updateBoardArray(row,col,pieceType,team)
             processedImage = self.addPiecesToImage(processedImage, row, col)
+        cv2.imshow("Colors", saturatedImage)
+        cv2.waitKey(0)
         cv2.imshow("Generated", processedImage)
         cv2.waitKey(0)
         return processedImage
@@ -186,7 +210,7 @@ class Board():
 class Game():
     def __init__(self):
         # Setup Serial Communicator
-        self.ser = serial.Serial ("COM12", 19200, timeout=None)    #Open port with baud rate
+        # self.ser = serial.Serial ("COM12", 19200, timeout=None)    #Open port with baud rate
         self.moveArray = []
 
     def captureBoard(self):
@@ -213,9 +237,9 @@ class Game():
             # Property Change:: prePos = 1: White - Null, postPos = -2: Black - White or -1: Null - White
             for location in changedLocations:
                 if changeBoard[location[0]][location[1]][0] == 1:
-                    prePos = BoardCols(location[1]+1).name + str(location[0] + 1)
+                    prePos = BoardCols(location[1]+1).name + str(8 - location[0])
                 if changeBoard[location[0]][location[1]][0] == -2 or changeBoard[location[0]][location[1]][0] == -1:
-                    postPos = BoardCols(location[1]+1).name + str(location[0] + 1)
+                    postPos = BoardCols(location[1]+1).name + str(8 - location[0])
             move_str = prePos + postPos
         return move_str #, team, piece
 
@@ -247,7 +271,7 @@ class Game():
         else:
             A5, B5 = postBoard.convertToBoardCoord(ai_move.yfrom,ai_move.xfrom)
             self.moveArray.append(Move(A5, B5, 0)) # Move to ai piece to move with no magnet
-            if (postBoard.boardArray[ai_move.yfrom][ai_move.xfrom] == Piece.N):
+            if (postBoard.boardArray[ai_move.yfrom][ai_move.xfrom][1] == Piece.N):
                 dX = ai_move.xto - ai_move.xfrom
                 dY = ai_move.yto - ai_move.yfrom
                 A6, B6 = postBoard.convertToBoardCoord(ai_move.yfrom+0.5*np.sign(dY),ai_move.xfrom+0.5*np.sign(dX))
@@ -278,14 +302,14 @@ class Game():
     def transferMovesToBoard(self):
         for move in self.moveArray:
             message = bytearray(move.moveMessage)
-            self.ser.write(message)
-            received_data = self.ser.read(7)              #read serial port
-            receivedMessage = list(received_data)
-            if (receivedMessage[1] != move.instruction):
-                print("Error: Unexpected Movement Response")
-                print(received_data)
-                break
-            print (received_data)                   #print received data
+            # self.ser.write(message)
+            # received_data = self.ser.read(7)              #read serial port
+            # receivedMessage = list(received_data)
+            # if (receivedMessage[1] != move.instruction):
+            #     print("Error: Unexpected Movement Response")
+            #     print(received_data)
+            #     break
+            # print (received_data)                   #print received data
         if (len(self.moveArray) == move):
             print("AI move completed")
         self.moveArray = []
@@ -316,8 +340,8 @@ class Move():
         self.moveMessage = [255, self.instruction, self.xByte1, self.xByte2, self.yByte1, self.yByte2, self.decoderByte]       
 
 if __name__ == "__main__":
-    chessGame = Game()
-    chessGame.planTrajectory(0,0,Piece.K,False)
+    # chessGame = Game()
+    # chessGame.planTrajectory(0,0,Piece.K,False)
     # runChessAI()
     # preBoard, preProcessedImage = chessGame.captureBoard()
     # cv2.imshow('PreBoard',preProcessedImage)
