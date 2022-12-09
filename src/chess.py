@@ -32,17 +32,17 @@ class Team(Enum):
 
 class Board():
     def __init__(self):
-        self.origin = [260,50]
-        self.width = 800
-        self.height = 800
+        self.origin = [310,20]
+        self.width = 700
+        self.height = 700
         self.teamColorOffset = 10
         self.pieceColorDict = {
-            Piece.K: ([127,0,0], [255,130,100]),
-            Piece.Q: ([0,0,180], [180,160,255]),
-            Piece.B: ([175,175,175], [255,255,255]),
-            Piece.N: ([0,127,0], [210,255,180]),
-            Piece.R: ([100,0,100], [255,175,210]),
-            Piece.P: ([0,0,0], [100,100,100])
+            Piece.K: ([127,0,0], [255,130,110]),
+            Piece.Q: ([0,0,200], [180,160,255]),
+            Piece.B: ([163,165,165], [255,255,255]),
+            Piece.N: ([0,100,0], [210,255,150]),
+            Piece.R: ([70,0,100], [255,175,210]),
+            Piece.P: ([0,0,0], [105,105,105])
         }
         self.boardArray = np.zeros((8,8,2))
         self.outOfGameLoc = [0,400]
@@ -53,6 +53,9 @@ class Board():
         cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1024)
+        cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3) # auto mode
+        cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1) # manual mode
+        cap.set(cv2.CAP_PROP_EXPOSURE, 0)
         time.sleep(0.500)
         rawImage = cap.read()[1]
         enhancedImage = rawImage.copy()
@@ -67,7 +70,7 @@ class Board():
         hsvImg[...,2] = hsvImg[...,2]*1 #0.6
 
         # Smooth out image to reduce noise
-        smoothingSize = 6
+        smoothingSize = 8
         kernel = np.ones((smoothingSize,smoothingSize),np.float32)/(smoothingSize*smoothingSize)
         enhancedImage=cv2.filter2D(cv2.cvtColor(hsvImg,cv2.COLOR_HSV2BGR),-1,kernel)
 
@@ -76,18 +79,19 @@ class Board():
         # histoImage = cv2.equalizeHist(histoImage)
         # enhancedImage = cv2.cvtColor(histoImage,cv2.COLOR_GRAY2BGR)
 
-        cv2.imshow("Raw", rawImage)
-        cv2.waitKey(0)        
-        cv2.imshow('AnalyseSpot',enhancedImage)
-        cv2.waitKey(0)
+        # cv2.imshow("Raw", rawImage)
+        # cv2.waitKey(0)        
+        # cv2.imshow('AnalyseSpot',enhancedImage)
+        # cv2.waitKey(0)
         return enhancedImage, rawImage
 
     def findPiecesLoc(self, image):
         # Convert image to grayscale
         processedImage = image.copy()
-        gray = cv2.GaussianBlur(cv2.cvtColor(processedImage, cv2.COLOR_BGR2GRAY),(7,7),1.9)
+        gray = cv2.GaussianBlur(cv2.cvtColor(processedImage, cv2.COLOR_BGR2GRAY),(7,7),0.1)
         # Use Hough Circle 
-        circ = cv2.HoughCircles(gray,cv2.HOUGH_GRADIENT, 1.0, 25, param1=100, param2=35, minRadius=15, maxRadius=30)
+        # inverse ratio of accumulator: minDist: gradient for edges: accumulator threshold more or less circles
+        circ = cv2.HoughCircles(gray,cv2.HOUGH_GRADIENT, 0.8, 55, param1=230, param2=20, minRadius=14, maxRadius=26)
 
         if circ is not None:
             circ = np.uint16(np.around(circ))[0,:]
@@ -98,8 +102,10 @@ class Board():
                 cv2.circle(processedImage, (c[0], c[1]), c[2], (0, 255, 0), 2)
                 cv2.circle(processedImage, (c[0], c[1]), 1, (0, 0, 255), 3)
                 cv2.circle(processedImage, (c[0]+self.teamColorOffset, c[1]+self.teamColorOffset), 1, (0, 0, 0), 1)
-        # cv2.imshow("Circles", processedImage)
-        # cv2.waitKey(0)
+        cv2.imshow("gray", gray)
+        cv2.waitKey(0)
+        cv2.imshow("Circles", processedImage)
+        cv2.waitKey(0)
         return circ, processedImage, gray
 
     def drawGrid(self,image):
@@ -120,7 +126,7 @@ class Board():
             cv2.line(image, (self.origin[0], y), (self.width + self.origin[0], y), color=color, thickness=thickness)
         return image
 
-    def identifyPiece(self,location,image):
+    def identifyPiece(self,location,image, processedImage):
         adjustedLoc = [location[1] - self.origin[1], location[0] - self.origin[0]]
         # Find Row and Column of Piece
         col = BoardCols(int(adjustedLoc[1] / (self.width/8) + 1))
@@ -131,23 +137,11 @@ class Board():
         pieceType = Piece.NULL.value
         typeColor = image[location[1], location[0]]
         font = cv2.FONT_HERSHEY_SIMPLEX
-        orgX = round((self.origin[0] + (BoardCols(col).value-1)*self.width/8 - 5)) #  + self.width/16
-        orgY = round((self.origin[1] + (row-1)*self.height/8+self.height/8-5)) # + self.height/16
-        cv2.putText(image, "[" + str(typeColor[0]) + "," + str(typeColor[1]) + "," + str(typeColor[2]) + "]", (orgX, orgY), font, 0.4, (0, 255, 255), 1, cv2.LINE_AA)
+        orgX = round((self.origin[0] + (BoardCols(col).value-1)*self.width/8 + 5)) #  + self.width/16
+        orgY = round((self.origin[1] + (row-1)*self.height/8 + 10)) # + self.height/16
+        cv2.putText(processedImage, "[" + str(typeColor[0]) + "," + str(typeColor[1]) + "," + str(typeColor[2]) + "]", (orgX, orgY), font, 0.4, (0, 255, 255), 1, cv2.LINE_AA)
         pass
         for piece, pieceColor in self.pieceColorDict.items():
-            Blow = pieceColor[0][0]
-            Bhigh = pieceColor[1][0]
-            Glow = pieceColor[0][1]
-            Ghigh = pieceColor[1][1]
-            Rlow = pieceColor[0][2]
-            Rhigh = pieceColor[1][2]
-            identifyB = typeColor[0]
-            identifyG = typeColor[1]
-            identifyR = typeColor[2]
-            testB = pieceColor[0][0] < typeColor[0] < pieceColor[1][0]
-            testG = pieceColor[0][1] < typeColor[1] < pieceColor[1][1]
-            testR = pieceColor[0][2] < typeColor[2] < pieceColor[1][2]
             if (pieceColor[0][0] <= typeColor[0] <= pieceColor[1][0]) and (pieceColor[0][1] <= typeColor[1] <= pieceColor[1][1]) and (pieceColor[0][2] <= typeColor[2] <= pieceColor[1][2]):
                 pieceType = piece.value
                 break
@@ -167,7 +161,7 @@ class Board():
         else:
             team = Team.NULL.value
             print("Team not Recognized")
-        return row,col,pieceType,team,image
+        return row,col,pieceType,team,processedImage
 
     def updateBoardArray(self,row,col,pieceType,team):
         self.boardArray[row-1][BoardCols(col).value-1] = [team, pieceType]
@@ -188,13 +182,13 @@ class Board():
         cv2.waitKey(0)
         for location in locations:
             # cv2.imshow('RawImage',rawImage)
-            row, col, pieceType, team, saturatedImage = self.identifyPiece(location, saturatedImage)
+            row, col, pieceType, team, processedImage = self.identifyPiece(location, saturatedImage, processedImage)
             self.updateBoardArray(row,col,pieceType,team)
             processedImage = self.addPiecesToImage(processedImage, row, col)
-        cv2.imshow("Colors", saturatedImage)
-        cv2.waitKey(0)
-        cv2.imshow("Generated", processedImage)
-        cv2.waitKey(0)
+        # cv2.imshow("Colors", saturatedImage)
+        # cv2.waitKey(0)
+        # cv2.imshow("Generated", processedImage)
+        # cv2.waitKey(0)
         return processedImage
             
     def convertToBoardCoord(self, row, col):
