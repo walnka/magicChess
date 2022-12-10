@@ -16,14 +16,14 @@ class Piece(Enum):
     NULL = -1
 
 class BoardCols(Enum):
-    A = 1
-    B = 2
-    C = 3
-    D = 4
-    E = 5
-    F = 6
-    G = 7
-    H = 8
+    A = 8
+    B = 7
+    C = 6
+    D = 5
+    E = 4
+    F = 3
+    G = 2
+    H = 1
 
 class Team(Enum):
     W = 1
@@ -37,17 +37,17 @@ class Board():
         self.height = 700
         self.teamColorOffset = 10
         self.pieceColorDict = {
-            Piece.K: ([127,0,0], [255,130,110]),
-            Piece.Q: ([0,0,200], [180,160,255]),
-            Piece.B: ([163,165,165], [255,255,255]),
-            Piece.N: ([0,100,0], [210,255,150]),
-            Piece.R: ([70,0,100], [255,175,210]),
-            Piece.P: ([0,0,0], [105,105,105])
+            Piece.K: ([50,0,0], [150,130,90]),
+            Piece.Q: ([0,0,150], [30,80,255]),
+            Piece.B: ([50,90,180], [255,150,255]),
+            Piece.N: ([0,60,0], [210,120,120]),
+            Piece.R: ([20,0,110], [130,175,165]),
+            Piece.P: ([0,0,0], [80,80,80])
         }
         self.boardArray = np.zeros((8,8,2))
         self.outOfGameLoc = [0,400]
-        self.actualWidth = 400 # mm
-        self.actualHeight = 400 # mm
+        self.actualWidth = 420 # mm
+        self.actualHeight = 425 # mm
 
     def takeRawImage(self):
         cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
@@ -67,7 +67,7 @@ class Board():
         hsvImg[...,1] = hsvImg[...,1]*1 #2.2
 
         #multiple by a factor of less than 1 to reduce the brightness 
-        hsvImg[...,2] = hsvImg[...,2]*1 #0.6
+        hsvImg[...,2] = hsvImg[...,2]*0.9 #0.6
 
         # Smooth out image to reduce noise
         smoothingSize = 8
@@ -102,10 +102,10 @@ class Board():
                 cv2.circle(processedImage, (c[0], c[1]), c[2], (0, 255, 0), 2)
                 cv2.circle(processedImage, (c[0], c[1]), 1, (0, 0, 255), 3)
                 cv2.circle(processedImage, (c[0]+self.teamColorOffset, c[1]+self.teamColorOffset), 1, (0, 0, 0), 1)
-        cv2.imshow("gray", gray)
-        cv2.waitKey(0)
-        cv2.imshow("Circles", processedImage)
-        cv2.waitKey(0)
+        # cv2.imshow("gray", gray)
+        # cv2.waitKey(0)
+        # cv2.imshow("Circles", processedImage)
+        # cv2.waitKey(0)
         return circ, processedImage, gray
 
     def drawGrid(self,image):
@@ -152,8 +152,8 @@ class Board():
         teamColor = bwImage[location[1]+self.teamColorOffset, location[0]+self.teamColorOffset]
         # cv2.imshow('AnalyseSpot',bwImage[location[1]-self.teamColorOffset:location[1]+self.teamColorOffset, location[0]-self.teamColorOffset:location[0]+self.teamColorOffset])
         # cv2.waitKey(0)
-        whiteRange = [127, 255]
-        blackRange = [0, 127]
+        whiteRange = [100, 255]
+        blackRange = [0, 100]
         if (whiteRange[0] <= teamColor <= whiteRange[1]):
             team=Team.W.value
         elif (blackRange[0] <= teamColor < blackRange[1]):
@@ -178,8 +178,8 @@ class Board():
     def generateBoard(self,rawImage, saturatedImage):
         locations, processedImage, grayImage = self.findPiecesLoc(rawImage)
         processedImage = self.drawGrid(processedImage)
-        cv2.imshow("Griddy", processedImage)
-        cv2.waitKey(0)
+        # cv2.imshow("Griddy", processedImage)
+        # cv2.waitKey(0)
         for location in locations:
             # cv2.imshow('RawImage',rawImage)
             row, col, pieceType, team, processedImage = self.identifyPiece(location, saturatedImage, processedImage)
@@ -195,16 +195,16 @@ class Board():
         # row and col should be numbers
         x = col*self.actualWidth/8+self.actualWidth/16
         y = row*self.actualHeight/8+self.actualHeight/16
-        A = x
-        B = y
-        A16bit = A*80 #A mm * 80 step/mm 
-        B16bit = B*80 #B mm * 80 step/mm
+        A = x + y
+        B = x - y + self.actualHeight
+        A16bit = A*72 #A mm * 80 step/mm 
+        B16bit = B*72 #B mm * 80 step/mm
         return [A16bit, B16bit]
 
 class Game():
     def __init__(self):
         # Setup Serial Communicator
-        # self.ser = serial.Serial ("COM12", 19200, timeout=None)    #Open port with baud rate
+        self.ser = serial.Serial ("COM12", 19200, timeout=None)    #Open port with baud rate
         self.moveArray = []
 
     def captureBoard(self):
@@ -247,12 +247,12 @@ class Game():
             # self.castling_move = castling_move
 
         # Check if piece is being captured
-        if postBoard.boardArray[ai_move.yto][ai_move.xto][0] == Team.W:
+        if postBoard.boardArray[ai_move.yto][7-ai_move.xto][0] == Team.W:
             edgeMove = True
             #Convert col and row to location
-            A1, B1 = postBoard.convertToBoardCoord(ai_move.yto,ai_move.xto)
+            A1, B1 = postBoard.convertToBoardCoord(ai_move.yto,7-ai_move.xto)
             self.moveArray.append(Move(A1, B1, 0)) # Start by moving to piece to be removed with no magnet
-            A2, B2 = postBoard.convertToBoardCoord(ai_move.yto-0.5,ai_move.xto)
+            A2, B2 = postBoard.convertToBoardCoord(ai_move.yto-0.5,7-ai_move.xto)
             self.moveArray.append(Move(A2, B2, 1)) # Move to forward edge of square
             A3, B3 = postBoard.convertToBoardCoord(ai_move.yto-0.5,-0.5)
             self.moveArray.append(Move(A3, B3, 1)) # Next move to OoB location with magnet
@@ -263,32 +263,35 @@ class Game():
             self.moveArray.append(Move(A4, B4, 1)) # Next move to OoB location with magnet            
             pass
         else:
-            A5, B5 = postBoard.convertToBoardCoord(ai_move.yfrom,ai_move.xfrom)
+            A5, B5 = postBoard.convertToBoardCoord(ai_move.yfrom,7-ai_move.xfrom)
             self.moveArray.append(Move(A5, B5, 0)) # Move to ai piece to move with no magnet
             if (postBoard.boardArray[ai_move.yfrom][ai_move.xfrom][1] == Piece.N):
                 dX = ai_move.xto - ai_move.xfrom
                 dY = ai_move.yto - ai_move.yfrom
-                A6, B6 = postBoard.convertToBoardCoord(ai_move.yfrom+0.5*np.sign(dY),ai_move.xfrom+0.5*np.sign(dX))
+                A6, B6 = postBoard.convertToBoardCoord(ai_move.yfrom+0.5*np.sign(dY),7-ai_move.xfrom+0.5*np.sign(dX))
                 self.moveArray.append(Move(A6, B6, 1)) # Move to corner of square depending on quadrant
                 if (dY > dX):
-                    A7, B7 = postBoard.convertToBoardCoord(ai_move.yto,ai_move.xfrom+0.5*np.sign(dX))
+                    A7, B7 = postBoard.convertToBoardCoord(ai_move.yto,7-ai_move.xfrom+0.5*np.sign(dX))
                     self.moveArray.append(Move(A7, B7, 1)) # Move to ai piece to move with no magnet
                 else:
-                    A7, B7 = postBoard.convertToBoardCoord(ai_move.yto+0.5*np.sign(dY),ai_move.xto)
+                    A7, B7 = postBoard.convertToBoardCoord(ai_move.yto+0.5*np.sign(dY),7-ai_move.xto)
                     self.moveArray.append(Move(A7, B7, 1)) # Move to ai piece to move with no magnet
                 # A8, B8 = postBoard.convertToBoardCoord(ai_move.yto,ai_move.xto)
                 # self.moveArray.append(Move(A7, B7, 1)) # Move to ai piece to move with no magnet
             # else:      
-            A8, B8 = postBoard.convertToBoardCoord(ai_move.yto, ai_move.xto)
+            A8, B8 = postBoard.convertToBoardCoord(ai_move.yto,7- ai_move.xto)
             self.moveArray.append(Move(A8, B8, 1)) # Move to final AI location with magnet
+            # A9, B9 = postBoard.convertToBoardCoord(ai_move.yto,7- ai_move.xto)
+            self.moveArray.append(Move(A8, B8, 0)) # Move to final AI location with magnet
 
         # Run trajectory planning function with above knowledge
         self.transferMovesToBoard()
 
     def planTrajectory(self, preLoc, postLoc, edgeMove, castling):
         # edgeMove is bool telling whether piece is moving on edges or not
-        self.moveArray.append(Move(32000.0, 32000.0, 0))
-        self.moveArray.append(Move(10000.0, 10000.0, 1))
+        # self.moveArray.append(Move(2000.0, 2000.0, 0))
+        # self.moveArray.append(Move(4000.0, 0.0, 0))
+        # self.moveArray.append(Move(10000.0, 10000.0, 1))
         # self.moveArray.append(Move(10000.0, 10000.0, 2))
         self.transferMovesToBoard()
         pass
@@ -296,14 +299,14 @@ class Game():
     def transferMovesToBoard(self):
         for move in self.moveArray:
             message = bytearray(move.moveMessage)
-            # self.ser.write(message)
-            # received_data = self.ser.read(7)              #read serial port
-            # receivedMessage = list(received_data)
-            # if (receivedMessage[1] != move.instruction):
-            #     print("Error: Unexpected Movement Response")
-            #     print(received_data)
-            #     break
-            # print (received_data)                   #print received data
+            self.ser.write(message)
+            received_data = self.ser.read(7)              #read serial port
+            receivedMessage = list(received_data)
+            if (receivedMessage[1] != move.instruction):
+                print("Error: Unexpected Movement Response")
+                print(received_data)
+                break
+            print (received_data)                   #print received data
         if (len(self.moveArray) == move):
             print("AI move completed")
         self.moveArray = []
@@ -332,9 +335,23 @@ class Move():
             self.yByte2 = 0
             self.decoderByte |= 1 
         self.moveMessage = [255, self.instruction, self.xByte1, self.xByte2, self.yByte1, self.yByte2, self.decoderByte]       
-
+    
 if __name__ == "__main__":
-    # chessGame = Game()
+    chessGame = Game()
+    chessBoard = Board()
+    # chessGame.moveArray.append(Move(0, 0, 1)) # Next move to OoB location with magnet
+    A3, B3 = chessBoard.convertToBoardCoord(0,0)
+    chessGame.moveArray.append(Move(A3, B3, 0)) # Next move to OoB location with magnet
+    # chessGame.moveArray.append(Move(A3, B3, 1)) # Next move to OoB location with magnet
+    # A3, B3 = chessBoard.convertToBoardCoord(6,4)
+    # chessGame.moveArray.append(Move(A3, B3, 0))
+    # A3, B3 = chessBoard.convertToBoardCoord(6,4)
+    # chessGame.moveArray.append(Move(A3, B3, 1))
+    # A3, B3 = chessBoard.convertToBoardCoord(2,0)
+    # chessGame.moveArray.append(Move(A3, B3, 1)) # Next move to OoB location with magnet
+    # A3, B3 = chessBoard.convertToBoardCoord(2,2)
+    # chessGame.moveArray.append(Move(A3, B3, 1)) # Next move to OoB location with magnet
+    chessGame.transferMovesToBoard()
     # chessGame.planTrajectory(0,0,Piece.K,False)
     # runChessAI()
     # preBoard, preProcessedImage = chessGame.captureBoard()
