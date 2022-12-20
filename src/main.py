@@ -1,5 +1,6 @@
 ## Slightly modified from https://github.com/Dirk94/ChessAI ##
 import board, pieces, ai, chess, cv2
+from tkinter import Tk, Canvas, Button
 
 # Returns a move object based on the users input. Does not check if the move is valid.
 def get_user_move(attempt):

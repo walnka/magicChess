@@ -23,7 +23,7 @@ unsigned volatile int xr = 0;
 unsigned volatile int yr = 0;
 volatile int xError = 0;
 volatile int yError = 0;
-unsigned volatile int magnetPower = 0x3E8;
+unsigned volatile int magnetPower = 1000;
 unsigned volatile int magnetState = 0;
 unsigned volatile int movingState = 0;
 unsigned volatile int calibrationState = 0;
@@ -76,11 +76,11 @@ int main(void)
     CSCTL3 |= DIVS_5;                           // Set divider for SMCLK (/32) -> SMCLK 500kHz
 
     // Configure timer B0 for Magnet PWM
-    TB0CTL |= TBSSEL_1 + MC_1 + ID_1 + TBCLR;           // ACLK, up mode (16MHz/2 = 8MHz)
-    TB0CCTL0 |= CCIE;                               // CCR0 interrupt enable
-    TB0CCTL1 |= CCIE;
-    TB0CCR0 = magnetPower;                         // CCR0: interrupt for half step phase switching
-    TB0CCR1 = 0x300;
+//    TB0CTL |= TBSSEL_1 + MC_1 + ID_1 + TBCLR;           // ACLK, up mode (16MHz/2 = 8MHz)
+//    TB0CCTL0 |= CCIE;                               // CCR0 interrupt enable
+//    TB0CCTL1 |= CCIE;
+//    TB0CCR0 = 0;                         // CCR0: interrupt for half step phase switching
+//    TB0CCR1 = 1000;
     // Configure pins for Magnet PWM
     P1DIR |= BIT4 + BIT5;
     P1OUT &= ~(BIT4 + BIT5);
@@ -174,6 +174,8 @@ int main(void)
             case 0: // Move with Magnet Off
 //                transmitPackage(1, firstDataByte>>8,firstDataByte&0xFF,secondDataByte>>8,secondDataByte&0xFF);
                 TB0CCR0 = 0;
+                P1OUT &= ~BIT4;
+                P1OUT |= BIT5;
                 magnetState = 0;
                 xr = firstDataByte;
                 yr = secondDataByte;
@@ -189,7 +191,9 @@ int main(void)
                 break;
             case 1: // Move with Magnet On
 //                transmitPackage(3, firstDataByte>>8,firstDataByte&0xFF,secondDataByte>>8,secondDataByte&0xFF);
-                TB0CCR0 = magnetPower;
+                TB0CCR0 = 0; //magnetPower;
+                P1OUT |= BIT4;
+                P1OUT &= ~BIT5;
                 magnetState = 1;
                 xr = firstDataByte;
                 yr = secondDataByte;
@@ -319,19 +323,19 @@ __interrupt void IncrementYStepper(void){
     TB2CTL &= ~TBIFG;
 }
 
-// Timer B1 CCR1 Interrupt: Turn off stepper phases for magnet
-#pragma vector = TIMER0_B1_VECTOR
-__interrupt void TurnOffStepperPhases(void){
-    P1OUT |= BIT4;
-    TB0CCTL1 &= ~CCIFG;
-}
-
-// Timer B1 CCR0 Interrupt: Turn on proper stepper phases for magnet
-#pragma vector = TIMER0_B0_VECTOR
-__interrupt void TurnOnStepperPhases(void){
-    P1OUT &= ~BIT4;
-    TB0CCTL0 &= ~CCIFG;
-}
+//// Timer B1 CCR1 Interrupt: Turn off stepper phases for magnet
+//#pragma vector = TIMER0_B1_VECTOR
+//__interrupt void TurnOffStepperPhases(void){
+//    P1OUT |= BIT4;
+//    TB0CCTL1 &= ~CCIFG;
+//}
+//
+//// Timer B1 CCR0 Interrupt: Turn on proper stepper phases for magnet
+//#pragma vector = TIMER0_B0_VECTOR
+//__interrupt void TurnOnStepperPhases(void){
+//    P1OUT &= ~BIT4;
+//    TB0CCTL0 &= ~CCIFG;
+//}
 
 // Limit Switch Interrupt
 #pragma vector = PORT3_VECTOR
