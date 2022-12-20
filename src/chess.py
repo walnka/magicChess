@@ -37,17 +37,17 @@ class Board():
         self.height = 700
         self.teamColorOffset = 10
         self.pieceColorDict = {
-            Piece.K: ([50,0,0], [150,130,90]),
-            Piece.Q: ([0,0,150], [30,80,255]),
-            Piece.B: ([50,90,180], [255,150,255]),
-            Piece.N: ([0,60,0], [210,120,120]),
-            Piece.R: ([20,0,110], [130,175,165]),
+            Piece.K: ([120,25,20], [255,130,80]),
+            Piece.Q: ([0,0,120], [80,80,200]),
+            Piece.B: ([110,110,110], [255,255,255]),
+            Piece.N: ([0,60,0], [80,150,100]),
+            Piece.R: ([50,0,50], [170,80,130]),
             Piece.P: ([0,0,0], [80,80,80])
         }
         self.boardArray = np.zeros((8,8,2))
         self.outOfGameLoc = [0,400]
-        self.actualWidth = 420 # mm
-        self.actualHeight = 425 # mm
+        self.actualWidth = 440 # mm
+        self.actualHeight = 445 # mm
 
     def takeRawImage(self):
         cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
@@ -55,7 +55,7 @@ class Board():
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1024)
         cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3) # auto mode
         cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1) # manual mode
-        cap.set(cv2.CAP_PROP_EXPOSURE, 0)
+        cap.set(cv2.CAP_PROP_EXPOSURE, 10)
         time.sleep(0.500)
         rawImage = cap.read()[1]
         enhancedImage = rawImage.copy()
@@ -127,20 +127,22 @@ class Board():
         return image
 
     def identifyPiece(self,location,image, processedImage):
-        adjustedLoc = [location[1] - self.origin[1], location[0] - self.origin[0]]
-        # Find Row and Column of Piece
-        col = BoardCols(int(adjustedLoc[1] / (self.width/8) + 1))
-        row = int(adjustedLoc[0] / (self.height/8) + 1)
-        # Find Type of Piece
-        # cv2.imshow('AnalyseSpot',contrastImage)
-        # cv2.waitKey(0)
-        pieceType = Piece.NULL.value
-        typeColor = image[location[1], location[0]]
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        orgX = round((self.origin[0] + (BoardCols(col).value-1)*self.width/8 + 5)) #  + self.width/16
-        orgY = round((self.origin[1] + (row-1)*self.height/8 + 10)) # + self.height/16
-        cv2.putText(processedImage, "[" + str(typeColor[0]) + "," + str(typeColor[1]) + "," + str(typeColor[2]) + "]", (orgX, orgY), font, 0.4, (0, 255, 255), 1, cv2.LINE_AA)
-        pass
+        try:
+            adjustedLoc = [location[1] - self.origin[1], location[0] - self.origin[0]]
+            # Find Row and Column of Piece
+            col = BoardCols(int(adjustedLoc[1] / (self.width/8) + 1))
+            row = int(adjustedLoc[0] / (self.height/8) + 1)
+            # Find Type of Piece
+            pieceType = Piece.NULL.value
+            typeColor = image[location[1], location[0]]
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            orgX = round((self.origin[0] + (BoardCols(col).value-1)*self.width/8 + 5)) #  + self.width/16
+            orgY = round((self.origin[1] + (row-1)*self.height/8 + 10)) # + self.height/16
+            cv2.putText(processedImage, "[" + str(typeColor[0]) + "," + str(typeColor[1]) + "," + str(typeColor[2]) + "]", (orgX, orgY), font, 0.4, (0, 255, 255), 1, cv2.LINE_AA)
+            pass
+        except:
+            cv2.imshow('AnalyseSpot',processedImage)
+            cv2.waitKey(0)
         for piece, pieceColor in self.pieceColorDict.items():
             if (pieceColor[0][0] <= typeColor[0] <= pieceColor[1][0]) and (pieceColor[0][1] <= typeColor[1] <= pieceColor[1][1]) and (pieceColor[0][2] <= typeColor[2] <= pieceColor[1][2]):
                 pieceType = piece.value
@@ -209,8 +211,15 @@ class Game():
 
     def captureBoard(self):
         board = Board()
-        saturatedImage, rawImage = board.takeRawImage()
-        processedImage = board.generateBoard(rawImage, saturatedImage)
+        for x in range(0, 4):
+            try:
+                saturatedImage, rawImage = board.takeRawImage()
+                processedImage = board.generateBoard(rawImage, saturatedImage)
+            except:
+                pass
+            else:
+                break
+        
         return board, processedImage
 
     def detectMove(self, preBoard, postBoard):
@@ -219,7 +228,10 @@ class Game():
         # changedIndices = [[1,2,1],[4,5,4],[1,1,1]]
         changedLocations = []
         for indic in range(len(changedIndices[0])):
-            changedLocations.append([changedIndices[0][indic], changedIndices[1][indic]])
+            if (changedIndices[2][indic] == 1 and [changedIndices[0][indic], changedIndices[1][indic]] not in changedLocations):
+                pass
+            else:
+                changedLocations.append([changedIndices[0][indic], changedIndices[1][indic]])
         dictChangedLocations = Counter(tuple(item) for item in changedLocations)
         changedProperties = set(tuple(changedIndices[2]))
         # Check if anything other than 2 locations changed or if team didn't change (both considered errors)
@@ -339,16 +351,23 @@ class Move():
 if __name__ == "__main__":
     chessGame = Game()
     chessBoard = Board()
+
+    ## Test Code for debugging here ##
     # chessGame.moveArray.append(Move(0, 0, 1)) # Next move to OoB location with magnet
-    A3, B3 = chessBoard.convertToBoardCoord(0,0)
+    A3, B3 = chessBoard.convertToBoardCoord(0,7)
     chessGame.moveArray.append(Move(A3, B3, 0)) # Next move to OoB location with magnet
-    # chessGame.moveArray.append(Move(A3, B3, 1)) # Next move to OoB location with magnet
-    # A3, B3 = chessBoard.convertToBoardCoord(6,4)
-    # chessGame.moveArray.append(Move(A3, B3, 0))
-    # A3, B3 = chessBoard.convertToBoardCoord(6,4)
-    # chessGame.moveArray.append(Move(A3, B3, 1))
-    # A3, B3 = chessBoard.convertToBoardCoord(2,0)
-    # chessGame.moveArray.append(Move(A3, B3, 1)) # Next move to OoB location with magnet
+    A3, B3 = chessBoard.convertToBoardCoord(0,6)
+    chessGame.moveArray.append(Move(A3, B3, 0))
+    chessGame.moveArray.append(Move(A3, B3, 1))
+    A3, B3 = chessBoard.convertToBoardCoord(0,5.5)
+    chessGame.moveArray.append(Move(A3, B3, 1))
+    A3, B3 = chessBoard.convertToBoardCoord(2,5.5)
+    chessGame.moveArray.append(Move(A3, B3, 1))
+    A3, B3 = chessBoard.convertToBoardCoord(2,5)
+    chessGame.moveArray.append(Move(A3, B3, 1))
+    chessGame.moveArray.append(Move(A3, B3, 0))
+
+
     # A3, B3 = chessBoard.convertToBoardCoord(2,2)
     # chessGame.moveArray.append(Move(A3, B3, 1)) # Next move to OoB location with magnet
     chessGame.transferMovesToBoard()
