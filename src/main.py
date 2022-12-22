@@ -1,18 +1,19 @@
 ## Slightly modified from https://github.com/Dirk94/ChessAI ##
 import board, pieces, ai, chess, cv2
-from tkinter import Tk, Canvas, Button
 
 # Returns a move object based on the users input. Does not check if the move is valid.
 def get_user_move(attempt):
     ## Willem Change: run vision and chess.py methods to get user move ##
     if attempt == 1:
         preBoard, preProcessedImage = chessGame.captureBoard()
-        cv2.imshow('PreBoard',preProcessedImage)
-        cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+        # cv2.imshow('PreBoard',preProcessedImage)
+        # cv2.waitKey(1)
         input("Make your move now, press enter when finished")
         postBoard, postProcessedImage = chessGame.captureBoard()
-        cv2.imshow('PostBoard', postProcessedImage)
-        cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+        # cv2.imshow('PostBoard', postProcessedImage)
+        # cv2.waitKey(1)
         move_str = chessGame.detectMove(preBoard, postBoard)
     else:
         print("Example Move: A2 A4")
