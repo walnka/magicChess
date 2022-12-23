@@ -6,14 +6,14 @@ def get_user_move(attempt):
     ## Willem Change: run vision and chess.py methods to get user move ##
     if attempt == 1:
         preBoard, preProcessedImage = chessGame.captureBoard()
-        # cv2.destroyAllWindows()
-        # cv2.imshow('PreBoard',preProcessedImage)
-        # cv2.waitKey(1)
+        cv2.destroyAllWindows()
+        cv2.imshow('PreBoard',preProcessedImage)
+        cv2.waitKey(1)
         input("Make your move now, press enter when finished")
         postBoard, postProcessedImage = chessGame.captureBoard()
-        # cv2.destroyAllWindows()
-        # cv2.imshow('PostBoard', postProcessedImage)
-        # cv2.waitKey(1)
+        cv2.destroyAllWindows()
+        cv2.imshow('PostBoard', postProcessedImage)
+        cv2.waitKey(1)
         move_str = chessGame.detectMove(preBoard, postBoard)
     else:
         print("Example Move: A2 A4")

@@ -37,12 +37,12 @@ class Board():
         self.height = 700
         self.teamColorOffset = 10
         self.pieceColorDict = {
-            Piece.K: ([70,45,30], [130,90,80]),
-            Piece.Q: ([10,10,140], [80,80,255]),
-            Piece.B: ([85,100,100], [255,255,255]),
-            Piece.N: ([20,60,15], [110,140,120]),
-            Piece.R: ([55,30,65], [140,100,180]),
-            Piece.P: ([0,0,0], [85,85,85])
+            Piece.K: ([30,40,45], [75,95,95]),
+            Piece.Q: ([0,20,160], [40,95,255]),
+            Piece.B: ([20,100,160], [85,230,255]),
+            Piece.N: ([0,60,40], [40,140,120]),
+            Piece.R: ([15,40,80], [65,105,195]),
+            Piece.P: ([0,0,0], [20,65,100])
         }
         # Board array that keeps track of piece location and type
         self.boardArray = np.zeros((8,8,2))
@@ -68,7 +68,7 @@ class Board():
         hsvImg[...,1] = hsvImg[...,1]*1
 
         #multiple by a factor of less than 1 to reduce the brightness 
-        hsvImg[...,2] = hsvImg[...,2]*0.9
+        hsvImg[...,2] = hsvImg[...,2]*1
 
         # Smooth out image to reduce noise
         smoothingSize = 8
@@ -200,7 +200,7 @@ class Board():
 class Game():
     def __init__(self):
         # Setup Serial Communicator
-        self.ser = serial.Serial ("COM12", 19200, timeout=8)    #Open port with baud rate
+        # self.ser = serial.Serial ("COM12", 19200, timeout=8)    #Open port with baud rate
         self.moveArray = []
 
     # Creates board object, takes image, and generates board array using super function
@@ -300,18 +300,19 @@ class Game():
     # Steps through the moves and sends to the MSP430 over serial
     def transferMovesToBoard(self):
         for move in self.moveArray:
-            message = bytearray(move.moveMessage)
-            self.ser.write(message)
-            try:
-                received_data = self.ser.read(7)              #read serial port
-                receivedMessage = list(received_data)
-                if (receivedMessage[1] != move.instruction):
-                    print("Error: Unexpected Movement Response")
-                    print(received_data)
-                    break
-                # print (received_data)                   #print received data
-            except:
-                pass
+            time.sleep(2)
+            # message = bytearray(move.moveMessage)
+            # self.ser.write(message)
+            # try:
+            #     received_data = self.ser.read(7)              #read serial port
+            #     receivedMessage = list(received_data)
+            #     if (receivedMessage[1] != move.instruction):
+            #         print("Error: Unexpected Movement Response")
+            #         print(received_data)
+            #         break
+            #     # print (received_data)                   #print received data
+            # except:
+            #     pass
         if (len(self.moveArray) == move):
             print("AI move completed")
         self.moveArray = []
