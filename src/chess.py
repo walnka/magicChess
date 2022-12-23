@@ -95,7 +95,7 @@ class Board():
                 cv2.circle(processedImage, (c[0], c[1]), c[2], (0, 255, 0), 2)
                 cv2.circle(processedImage, (c[0], c[1]), 1, (0, 0, 255), 3)
                 cv2.circle(processedImage, (c[0]+self.teamColorOffset, c[1]+self.teamColorOffset), 1, (0, 0, 0), 1)
-        return circ, processedImage, gray
+        return circ, processedImage
 
     # Draws the grid on top of the processed picture
     def drawGrid(self,image):
@@ -176,7 +176,7 @@ class Board():
     # Finds piece locations, identifies piece, updates board array, and adds pieces to image
     # Super function that uses above defined functions
     def generateBoard(self,rawImage, saturatedImage):
-        locations, processedImage, grayImage = self.findPiecesLoc(rawImage)
+        locations, processedImage = self.findPiecesLoc(rawImage)
         processedImage = self.drawGrid(processedImage)
         for location in locations:
             row, col, pieceType, team, processedImage = self.identifyPiece(location, saturatedImage, processedImage)
